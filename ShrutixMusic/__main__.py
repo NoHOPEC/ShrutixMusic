@@ -1,13 +1,16 @@
 import asyncio
 import importlib
 import logging
+import re
+import subprocess
 
 from pyrogram import idle
-from pytgcalls.exceptions import NoActiveGroupCall
+from pytgcalls.exceptions import NoActiveGroupCall, NodeJSNotRunning
 
 import config
 from ShrutixMusic import LOGGER, nand, userbot
 from ShrutixMusic.core.call import Shruti
+from ShrutixMusic.core.userbot import assistants
 from ShrutixMusic.misc import sudo
 from ShrutixMusic.plugins import ALL_MODULES
 from ShrutixMusic.utils.database import get_banned_users, get_gbanned
@@ -17,13 +20,37 @@ from config import BANNED_USERS
 class _EndedCallNoiseFilter(logging.Filter):
     def filter(self, record):
         message = record.getMessage()
-        return not ("SetVideoCallStatus" in message and "GROUPCALL_FORBIDDEN" in message)
+        if "SetVideoCallStatus" in message and "GROUPCALL_FORBIDDEN" in message:
+            return False
+        if "AuthKeyNotFound" in message:
+            return False
+        return True
 
 
 logging.getLogger("asyncio").addFilter(_EndedCallNoiseFilter())
 
 
+def check_node():
+    try:
+        out = subprocess.run(
+            ["node", "-v"], capture_output=True, text=True, timeout=15
+        ).stdout.strip()
+    except Exception:
+        LOGGER("ShrutixMusic").error(
+            "Node.js is not installed. Install Node.js 20 and start the bot again."
+        )
+        exit()
+    match = re.match(r"v?(\d+)", out)
+    major = int(match.group(1)) if match else 0
+    if major > 20 or major < 16:
+        LOGGER("ShrutixMusic").warning(
+            f"Node.js {out} detected. py-tgcalls 0.9.7 works reliably on Node.js 18 or 20, "
+            "voice chat may fail with NodeJSNotRunning on other versions."
+        )
+
+
 async def init():
+    check_node()
     if (
         not config.STRING1
         and not config.STRING2
@@ -48,15 +75,28 @@ async def init():
         importlib.import_module("ShrutixMusic.plugins" + all_module)
     LOGGER("ShrutixMusic.plugins").info("Successfully Imported Modules...")
     await userbot.start()
+    if not assistants:
+        LOGGER("ShrutixMusic").error(
+            "No working assistant found. Check your session strings. Stopping Bot..."
+        )
+        exit()
     await Shruti.start()
+    if not assistants:
+        LOGGER("ShrutixMusic").error(
+            "No assistant could start voice chat support. Stopping Bot..."
+        )
+        exit()
     try:
         await Shruti.stream_call("https://te.legra.ph/file/29f784eb49d230ab62e9e.mp4")
     except NoActiveGroupCall:
-        LOGGER("ShrutixMusic").error(
-            "Please turn on the videochat of your log group\channel.\n\nStopping Bot..."
+        LOGGER("ShrutixMusic").warning(
+            "Videochat of your log group/channel is not running. Skipping the startup stream check."
         )
-        exit()
-    except:
+    except NodeJSNotRunning:
+        LOGGER("ShrutixMusic").error(
+            "Node.js is not running for py-tgcalls. Install Node.js 20 and restart the bot."
+        )
+    except Exception:
         pass
     await Shruti.decorators()
     LOGGER("ShrutixMusic").info(
