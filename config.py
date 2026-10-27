@@ -15,6 +15,7 @@ BOT_TOKEN = getenv("BOT_TOKEN", "")
 
 # Get from MongoDB Atlas
 MONGO_DB_URI = getenv("MONGO_DB_URI", "")
+DB_NAME = getenv("DB_NAME", "ShrutiBots")
 
 DURATION_LIMIT_MIN = int(getenv("DURATION_LIMIT", "60"))
 
