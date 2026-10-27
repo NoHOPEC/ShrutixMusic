@@ -9,6 +9,7 @@ from pytgcalls import PyTgCalls, StreamType
 from pytgcalls.exceptions import (
     AlreadyJoinedError,
     NoActiveGroupCall,
+    NodeJSNotRunning,
     TelegramServerError,
 )
 from pytgcalls.types import Update
@@ -18,6 +19,7 @@ from pytgcalls.types.stream import StreamAudioEnded
 
 import config
 from ShrutixMusic import LOGGER, YouTube, nand
+from ShrutixMusic.core.userbot import SESSION_ERRORS, assistants, remove_assistant
 from ShrutixMusic.misc import db
 from ShrutixMusic.utils.database import (
     add_active_chat,
@@ -160,6 +162,21 @@ class Call(PyTgCalls):
             self._chat_locks[chat_id] = lock
         return lock
 
+    def _calls_client(self, number: int):
+        return {
+            1: self.one,
+            2: self.two,
+            3: self.three,
+            4: self.four,
+            5: self.five,
+        }.get(int(number))
+
+    def _number_of(self, assistant):
+        for number in (1, 2, 3, 4, 5):
+            if self._calls_client(number) is assistant:
+                return number
+        return None
+
     async def _assistant_join(self, assistant, chat_id: int, stream, _):
         try:
             await assistant.join_group_call(
@@ -173,6 +190,22 @@ class Call(PyTgCalls):
             raise AssistantErr(_["call_9"])
         except TelegramServerError:
             raise AssistantErr(_["call_10"])
+        except NodeJSNotRunning:
+            raise AssistantErr(
+                "» Node.js is not running for the voice chat engine.\n\n"
+                "Install Node.js 20 on the server and restart the bot."
+            )
+        except SESSION_ERRORS:
+            number = self._number_of(assistant)
+            if number is not None:
+                remove_assistant(number)
+                LOGGER(__name__).error(
+                    f"Assistant {number} session is no longer valid. Removed it from the pool."
+                )
+            raise AssistantErr(
+                "» The assistant for this chat has an expired session. "
+                "It has been removed, please send the command again and another assistant will be used."
+            )
 
     async def _run_prejoin(self, chat_id: int, video: bool = False):
         assistant = await group_assistant(self, chat_id)
@@ -240,31 +273,11 @@ class Call(PyTgCalls):
             pass
 
     async def stop_stream_force(self, chat_id: int):
-        try:
-            if config.STRING1:
-                await self.one.leave_group_call(chat_id)
-        except:
-            pass
-        try:
-            if config.STRING2:
-                await self.two.leave_group_call(chat_id)
-        except:
-            pass
-        try:
-            if config.STRING3:
-                await self.three.leave_group_call(chat_id)
-        except:
-            pass
-        try:
-            if config.STRING4:
-                await self.four.leave_group_call(chat_id)
-        except:
-            pass
-        try:
-            if config.STRING5:
-                await self.five.leave_group_call(chat_id)
-        except:
-            pass
+        for number in list(assistants):
+            try:
+                await self._calls_client(number).leave_group_call(chat_id)
+            except:
+                pass
         try:
             await _clear_(chat_id)
         except:
@@ -670,30 +683,31 @@ class Call(PyTgCalls):
 
     async def ping(self):
         pings = []
-        if config.STRING1:
-            pings.append(await self.one.ping)
-        if config.STRING2:
-            pings.append(await self.two.ping)
-        if config.STRING3:
-            pings.append(await self.three.ping)
-        if config.STRING4:
-            pings.append(await self.four.ping)
-        if config.STRING5:
-            pings.append(await self.five.ping)
+        for number in list(assistants):
+            try:
+                pings.append(await self._calls_client(number).ping)
+            except Exception:
+                continue
+        if not pings:
+            return "0"
         return str(round(sum(pings) / len(pings), 3))
 
     async def start(self):
         LOGGER(__name__).info("Starting PyTgCalls Client...\n")
-        if config.STRING1:
-            await self.one.start()
-        if config.STRING2:
-            await self.two.start()
-        if config.STRING3:
-            await self.three.start()
-        if config.STRING4:
-            await self.four.start()
-        if config.STRING5:
-            await self.five.start()
+        for number in list(assistants):
+            try:
+                await self._calls_client(number).start()
+            except NodeJSNotRunning:
+                LOGGER(__name__).error(
+                    f"PyTgCalls failed to start for Assistant {number}: Node.js is not running. "
+                    "Install Node.js 20 and restart."
+                )
+                remove_assistant(number)
+            except Exception as e:
+                LOGGER(__name__).error(
+                    f"PyTgCalls failed to start for Assistant {number}: {type(e).__name__}: {e}. Skipping it."
+                )
+                remove_assistant(number)
 
     async def decorators(self):
         @self.one.on_kicked()
