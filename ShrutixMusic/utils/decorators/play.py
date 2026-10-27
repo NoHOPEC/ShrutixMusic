@@ -10,9 +10,11 @@ from pyrogram.errors import (
 from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 
 from ShrutixMusic import YouTube, nand
+from ShrutixMusic.core.userbot import SESSION_ERRORS, assistants, remove_assistant
 from ShrutixMusic.misc import SUDOERS
 from ShrutixMusic.utils.database import (
     get_assistant,
+    get_client,
     get_cmode,
     get_lang,
     get_playmode,
@@ -25,6 +27,25 @@ from config import PLAYLIST_IMG_URL, SUPPORT_CHAT, adminlist
 from strings import get_string
 
 links = {}
+
+
+async def get_working_assistant(chat_id):
+    for _attempt in range(6):
+        if not assistants:
+            return None
+        userbot = await get_assistant(chat_id)
+        try:
+            await userbot.get_me()
+            return userbot
+        except SESSION_ERRORS:
+            for number in list(assistants):
+                if (await get_client(number)) is userbot:
+                    remove_assistant(number)
+                    break
+            continue
+        except Exception:
+            return userbot
+    return None
 
 
 def PlayWrapper(command):
@@ -114,7 +135,11 @@ def PlayWrapper(command):
             fplay = None
 
         if not await is_active_chat(chat_id):
-            userbot = await get_assistant(chat_id)
+            userbot = await get_working_assistant(chat_id)
+            if userbot is None:
+                return await message.reply_text(
+                    "» No working assistant is available right now. Please contact the bot owner."
+                )
             try:
                 try:
                     get = await nand.get_chat_member(chat_id, userbot.id)
