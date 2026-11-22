@@ -184,16 +184,17 @@ def _control_rows(_, chat_id, playing, styles, autoplay_on, end_style):
     ]
 
 
-def _compact_now_playing_blocks(caption_html):
+def _compact_now_playing_blocks(_, caption_html):
     lines = [line.strip() for line in caption_html.splitlines() if line.strip()]
     if len(lines) < 4:
         return _html_caption_to_blocks(caption_html)
 
     title_match = re.search(r"<a\b[^>]*>.*?</a>", lines[1], re.IGNORECASE)
-    if title_match:
-        title = f"<b>{title_match.group(0)}</b>"
-    else:
-        title = re.sub(r"</?b>", "", lines[1], flags=re.IGNORECASE).strip()
+    title_html = (
+        title_match.group(0)
+        if title_match
+        else re.sub(r"</?b>", "", lines[1], flags=re.IGNORECASE).strip()
+    )
 
     details = []
     for line in lines[2:4]:
@@ -203,18 +204,18 @@ def _compact_now_playing_blocks(caption_html):
 
     return [
         types.InputRichBlockSectionHeading(
-            text=_parse_inline(title),
+            text=types.RichTextBold(text=_["RICH_NOW_PLAYING"]),
             size=4,
         ),
+        types.InputRichBlockParagraph(text=_parse_inline(title_html)),
         *details,
     ]
-
 
 def build_now_playing_blocks(
     _, photo, caption_html, chat_id, played=None, dur=None, playing=True, autoplay_on=False
 ):
     blocks = [types.InputRichBlockPhoto(photo=types.InputMediaPhoto(photo))]
-    blocks += _compact_now_playing_blocks(caption_html)
+    blocks += _compact_now_playing_blocks(_, caption_html)
     styles = [
         enums.ButtonStyle.PRIMARY,
         enums.ButtonStyle.SUCCESS,
@@ -397,4 +398,5 @@ async def set_now_playing_state(chat_id, playing):
         return await _edit_rich(mystic, blocks)
     except Exception:
         return None
+
 
