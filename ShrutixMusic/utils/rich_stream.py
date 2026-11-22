@@ -115,7 +115,7 @@ def _progress_row(played, dur, style):
                 callback_data="GetTimer",
             )
         ],
-        align=enums.BlockAlignment.CENTER,
+        align="center",
     )
 
 
@@ -154,7 +154,7 @@ def _control_rows(_, chat_id, playing, styles, autoplay_on, end_style):
                     callback_data=f"ADMIN Skip|{chat_id}",
                 ),
             ],
-            align=enums.BlockAlignment.CENTER,
+            align="center",
         ),
         types.InputRichBlockButtons(
             buttons=[
@@ -169,7 +169,7 @@ def _control_rows(_, chat_id, playing, styles, autoplay_on, end_style):
                     callback_data=f"ADMIN Stop|{chat_id}",
                 ),
             ],
-            align=enums.BlockAlignment.CENTER,
+            align="center",
         ),
         types.InputRichBlockButtons(
             buttons=[
@@ -179,7 +179,7 @@ def _control_rows(_, chat_id, playing, styles, autoplay_on, end_style):
                     callback_data=f"nowplaying_autoplay {chat_id}",
                 ),
             ],
-            align=enums.BlockAlignment.CENTER,
+            align="center",
         ),
     ]
 
@@ -306,7 +306,7 @@ def build_queue_blocks(_, caption_html, chat_id, qid):
                     callback_data=f"ADMIN PlayNow|{chat_id}_{qid}",
                 ),
             ],
-            align=enums.BlockAlignment.CENTER,
+            align="center",
         )
     )
     blocks.append(
@@ -323,7 +323,7 @@ def build_queue_blocks(_, caption_html, chat_id, qid):
                     callback_data=f"ADMIN Stop|{chat_id}",
                 ),
             ],
-            align=enums.BlockAlignment.CENTER,
+            align="center",
         )
     )
     return blocks
@@ -371,3 +371,4 @@ async def set_now_playing_state(chat_id, playing):
         return await _edit_rich(mystic, blocks)
     except Exception:
         return None
+
