@@ -287,19 +287,110 @@ async def release_mystic(mystic):
         pass
 
 
+def _classic_now_playing_markup(_, chat_id, playing, autoplay_on, played=None, dur=None):
+    rows = []
+    if played and dur:
+        rows.append(
+            [
+                types.InlineKeyboardButton(
+                    _progress_line(played, dur), callback_data="GetTimer"
+                )
+            ]
+        )
+    rows.extend(
+        [
+            [
+                types.InlineKeyboardButton(
+                    _["RICH_BTN_REPLAY"], callback_data=f"ADMIN Replay|{chat_id}"
+                ),
+                types.InlineKeyboardButton(
+                    _["RICH_BTN_PAUSE"] if playing else _["RICH_BTN_RESUME"],
+                    callback_data=f"ADMIN {'Pause' if playing else 'Resume'}|{chat_id}",
+                ),
+                types.InlineKeyboardButton(
+                    _["RICH_BTN_SKIP"], callback_data=f"ADMIN Skip|{chat_id}"
+                ),
+            ],
+            [
+                types.InlineKeyboardButton(
+                    _["RICH_BTN_QUEUE"].format(_queue_len(chat_id)),
+                    callback_data=f"nowplaying_queue {chat_id}",
+                ),
+                types.InlineKeyboardButton(
+                    _["RICH_BTN_END_QUEUE"], callback_data=f"ADMIN Stop|{chat_id}"
+                ),
+            ],
+            [
+                types.InlineKeyboardButton(
+                    _["RICH_BTN_AUTOPLAY_ON"] if autoplay_on else _["RICH_BTN_AUTOPLAY_OFF"],
+                    callback_data=f"nowplaying_autoplay {chat_id}",
+                )
+            ],
+        ]
+    )
+    return types.InlineKeyboardMarkup(rows)
+
+
+async def _deliver_classic(
+    client, target_chat_id, caption, reply_markup, photo=None, replace=None
+):
+    if replace is not None:
+        try:
+            if photo is not None:
+                if getattr(replace, "photo", None):
+                    edited = await replace.edit_caption(
+                        caption=caption, reply_markup=reply_markup
+                    )
+                    _consumed.add(_message_key(replace))
+                    return edited or replace
+                await replace.delete()
+            else:
+                edited = await replace.edit_text(
+                    text=caption, reply_markup=reply_markup
+                )
+                _consumed.add(_message_key(replace))
+                return edited or replace
+        except _FORBIDDEN:
+            if photo is None:
+                raise
+        except Exception:
+            try:
+                await replace.delete()
+            except Exception:
+                pass
+
+    if photo is not None:
+        try:
+            return await client.send_photo(
+                target_chat_id,
+                photo=photo,
+                caption=caption,
+                reply_markup=reply_markup,
+            )
+        except _FORBIDDEN:
+            pass
+    return await client.send_message(
+        target_chat_id,
+        text=caption,
+        reply_markup=reply_markup,
+        disable_web_page_preview=True,
+    )
+
+
 async def send_now_playing_rich(
     client, chat_id, target_chat_id, photo, caption_html, replace=None
 ):
     _ = await _lang(chat_id)
-    blocks = build_now_playing_blocks(
-        _, photo, caption_html, chat_id, autoplay_on=await is_autoplay(chat_id)
+    markup = _classic_now_playing_markup(
+        _, chat_id, True, await is_autoplay(chat_id)
     )
-    msg = await _deliver(client, target_chat_id, blocks, replace)
+    msg = await _deliver_classic(
+        client, target_chat_id, caption_html, markup, photo=photo, replace=replace
+    )
     if db.get(chat_id):
         db[chat_id][0]["np_photo"] = photo
         db[chat_id][0]["np_caption"] = caption_html
     return msg
-
 
 def build_queue_blocks(_, caption_html, chat_id, qid):
     blocks = _html_caption_to_blocks(caption_html)
@@ -337,23 +428,46 @@ async def send_queue_rich(
     client, chat_id, target_chat_id, caption_html, qid, replace=None
 ):
     _ = await _lang(chat_id)
-    blocks = build_queue_blocks(_, caption_html, chat_id, qid)
-    return await _deliver(client, target_chat_id, blocks, replace)
+    markup = types.InlineKeyboardMarkup(
+        [
+            [
+                types.InlineKeyboardButton(
+                    _["RICH_BTN_PLAYNOW"],
+                    callback_data=f"ADMIN PlayNow|{chat_id}_{qid}",
+                )
+            ],
+            [
+                types.InlineKeyboardButton(
+                    _["RICH_BTN_SKIP"], callback_data=f"ADMIN Skip|{chat_id}"
+                ),
+                types.InlineKeyboardButton(
+                    _["RICH_BTN_END"], callback_data=f"ADMIN Stop|{chat_id}"
+                ),
+            ],
+        ]
+    )
+    return await _deliver_classic(
+        client, target_chat_id, caption_html, markup, replace=replace
+    )
+
+async def _edit_now_playing(mystic, caption_html, markup):
+    if getattr(mystic, "photo", None):
+        return await mystic.edit_caption(caption=caption_html, reply_markup=markup)
+    return await mystic.edit_text(text=caption_html, reply_markup=markup)
 
 
 async def update_now_playing_progress(mystic, chat_id, played, dur, playing=True):
     info = db.get(chat_id)
     if not info:
         return None
-    photo = info[0].get("np_photo")
     caption_html = info[0].get("np_caption")
-    if not photo or not caption_html:
+    if not caption_html:
         return None
     _ = await _lang(chat_id)
-    blocks = build_now_playing_blocks(
-        _, photo, caption_html, chat_id, played, dur, playing, await is_autoplay(chat_id)
+    markup = _classic_now_playing_markup(
+        _, chat_id, playing, await is_autoplay(chat_id), played, dur
     )
-    return await _edit_rich(mystic, blocks)
+    return await _edit_now_playing(mystic, caption_html, markup)
 
 
 async def set_now_playing_state(chat_id, playing):
@@ -361,17 +475,16 @@ async def set_now_playing_state(chat_id, playing):
     if not info:
         return None
     mystic = info[0].get("mystic")
-    photo = info[0].get("np_photo")
     caption_html = info[0].get("np_caption")
-    if not mystic or not photo or not caption_html:
+    if not mystic or not caption_html:
         return None
     played = seconds_to_min(info[0].get("played", 0)) or None
     dur = info[0].get("dur")
     _ = await _lang(chat_id)
-    blocks = build_now_playing_blocks(
-        _, photo, caption_html, chat_id, played, dur, playing, await is_autoplay(chat_id)
+    markup = _classic_now_playing_markup(
+        _, chat_id, playing, await is_autoplay(chat_id), played, dur
     )
     try:
-        return await _edit_rich(mystic, blocks)
+        return await _edit_now_playing(mystic, caption_html, markup)
     except Exception:
         return None

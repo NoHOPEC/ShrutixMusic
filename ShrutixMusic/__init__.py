@@ -1,7 +1,5 @@
 from pyrogram import raw as _raw
 
-from ShrutixMusic import compat as _compat
-
 
 def _patch_update_group_call_chat_id():
     cls = _raw.types.UpdateGroupCall

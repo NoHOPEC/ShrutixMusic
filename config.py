@@ -6,26 +6,25 @@ from pyrogram import filters
 
 load_dotenv()
 
-# Get from my.telegram.org/app
+                              
 API_ID = int(getenv("API_ID", ""))
 API_HASH = getenv("API_HASH", "")
 
-# Get from @BotFather
+                     
 BOT_TOKEN = getenv("BOT_TOKEN", "")
 
-# Get from MongoDB Atlas
+                        
 MONGO_DB_URI = getenv("MONGO_DB_URI", "")
-DB_NAME = getenv("DB_NAME", "ShrutiBots")
 
 DURATION_LIMIT_MIN = int(getenv("DURATION_LIMIT", "60"))
 
 LOGGER_ID = int(getenv("LOGGER_ID", "0"))
 OWNER_ID = int(getenv("OWNER_ID", "7574330905"))
 
-# Heroku App Name
+                 
 HEROKU_APP_NAME = getenv("HEROKU_APP_NAME", "")
 
-# Get from dashboard.heroku.com/account
+                                       
 HEROKU_API_KEY = getenv("HEROKU_API_KEY", "")
 
 UPSTREAM_REPO = getenv(
@@ -54,7 +53,7 @@ AUTO_LEAVING_ASSISTANT = getenv(
     "False"
 ).lower() == "true"
 
-# Get from developer.spotify.com/dashboard
+                                          
 SPOTIFY_CLIENT_ID = getenv("SPOTIFY_CLIENT_ID")
 SPOTIFY_CLIENT_SECRET = getenv("SPOTIFY_CLIENT_SECRET")
 
@@ -70,7 +69,7 @@ TG_VIDEO_FILESIZE_LIMIT = int(
     getenv("TG_VIDEO_FILESIZE_LIMIT", "1073741824")
 )
 
-# Get from @Sessionbbbot
+                        
 STRING1 = getenv("STRING_SESSION")
 STRING2 = getenv("STRING_SESSION2")
 STRING3 = getenv("STRING_SESSION3")

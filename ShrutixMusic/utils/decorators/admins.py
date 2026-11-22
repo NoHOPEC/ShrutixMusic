@@ -1,4 +1,4 @@
-# ShrutixMusic/utils/decorators/admins.py
+                                         
 from pyrogram.enums import ChatType
 from pyrogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 
