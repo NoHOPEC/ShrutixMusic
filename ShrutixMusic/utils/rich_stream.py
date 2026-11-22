@@ -184,11 +184,37 @@ def _control_rows(_, chat_id, playing, styles, autoplay_on, end_style):
     ]
 
 
+def _compact_now_playing_blocks(caption_html):
+    lines = [line.strip() for line in caption_html.splitlines() if line.strip()]
+    if len(lines) < 4:
+        return _html_caption_to_blocks(caption_html)
+
+    title_match = re.search(r"<a\b[^>]*>.*?</a>", lines[1], re.IGNORECASE)
+    if title_match:
+        title = f"<b>{title_match.group(0)}</b>"
+    else:
+        title = re.sub(r"</?b>", "", lines[1], flags=re.IGNORECASE).strip()
+
+    details = []
+    for line in lines[2:4]:
+        line = re.sub(r"</?b>", "", line, flags=re.IGNORECASE)
+        line = re.sub(r"^[^\w<]+", "", line, flags=re.UNICODE).strip()
+        details.append(types.InputRichBlockParagraph(text=_parse_inline(line)))
+
+    return [
+        types.InputRichBlockSectionHeading(
+            text=_parse_inline(title),
+            size=4,
+        ),
+        *details,
+    ]
+
+
 def build_now_playing_blocks(
     _, photo, caption_html, chat_id, played=None, dur=None, playing=True, autoplay_on=False
 ):
     blocks = [types.InputRichBlockPhoto(photo=types.InputMediaPhoto(photo))]
-    blocks += _html_caption_to_blocks(caption_html)
+    blocks += _compact_now_playing_blocks(caption_html)
     styles = [
         enums.ButtonStyle.PRIMARY,
         enums.ButtonStyle.SUCCESS,
