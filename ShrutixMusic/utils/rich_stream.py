@@ -1,5 +1,4 @@
 import math
-import random
 import re
 
 from pyrogram import enums, errors, types
@@ -107,22 +106,6 @@ def _progress_line(played, dur):
     return f"{played}  {bar}  {dur}"
 
 
-_BUTTON_STYLES = [
-    enums.ButtonStyle.DEFAULT,
-    enums.ButtonStyle.PRIMARY,
-    enums.ButtonStyle.SUCCESS,
-    enums.ButtonStyle.DANGER,
-]
-
-
-def _random_styles():
-    styles = list(_BUTTON_STYLES)
-    styles.append(random.choice(_BUTTON_STYLES))
-    styles.append(random.choice(_BUTTON_STYLES))
-    random.shuffle(styles)
-    return styles
-
-
 def _progress_row(played, dur, style):
     return types.InputRichBlockButtons(
         buttons=[
@@ -131,7 +114,8 @@ def _progress_row(played, dur, style):
                 style=style,
                 callback_data="GetTimer",
             )
-        ]
+        ],
+        align=enums.BlockAlignment.CENTER,
     )
 
 
@@ -169,7 +153,8 @@ def _control_rows(_, chat_id, playing, styles, autoplay_on, end_style):
                     style=skip_style,
                     callback_data=f"ADMIN Skip|{chat_id}",
                 ),
-            ]
+            ],
+            align=enums.BlockAlignment.CENTER,
         ),
         types.InputRichBlockButtons(
             buttons=[
@@ -183,7 +168,8 @@ def _control_rows(_, chat_id, playing, styles, autoplay_on, end_style):
                     style=end_style,
                     callback_data=f"ADMIN Stop|{chat_id}",
                 ),
-            ]
+            ],
+            align=enums.BlockAlignment.CENTER,
         ),
         types.InputRichBlockButtons(
             buttons=[
@@ -192,7 +178,8 @@ def _control_rows(_, chat_id, playing, styles, autoplay_on, end_style):
                     style=enums.ButtonStyle.SUCCESS if autoplay_on else enums.ButtonStyle.DEFAULT,
                     callback_data=f"nowplaying_autoplay {chat_id}",
                 ),
-            ]
+            ],
+            align=enums.BlockAlignment.CENTER,
         ),
     ]
 
@@ -202,7 +189,14 @@ def build_now_playing_blocks(
 ):
     blocks = [types.InputRichBlockPhoto(photo=types.InputMediaPhoto(photo))]
     blocks += _html_caption_to_blocks(caption_html)
-    styles = _random_styles()
+    styles = [
+        enums.ButtonStyle.PRIMARY,
+        enums.ButtonStyle.SUCCESS,
+        enums.ButtonStyle.DANGER,
+        enums.ButtonStyle.PRIMARY,
+        enums.ButtonStyle.PRIMARY,
+        enums.ButtonStyle.DANGER,
+    ]
     if played and dur:
         blocks.append(_progress_row(played, dur, styles[4]))
     blocks += _control_rows(_, chat_id, playing, styles[:4], autoplay_on, styles[5])
@@ -311,7 +305,8 @@ def build_queue_blocks(_, caption_html, chat_id, qid):
                     style=enums.ButtonStyle.SUCCESS,
                     callback_data=f"ADMIN PlayNow|{chat_id}_{qid}",
                 ),
-            ]
+            ],
+            align=enums.BlockAlignment.CENTER,
         )
     )
     blocks.append(
@@ -327,7 +322,8 @@ def build_queue_blocks(_, caption_html, chat_id, qid):
                     style=enums.ButtonStyle.DANGER,
                     callback_data=f"ADMIN Stop|{chat_id}",
                 ),
-            ]
+            ],
+            align=enums.BlockAlignment.CENTER,
         )
     )
     return blocks
