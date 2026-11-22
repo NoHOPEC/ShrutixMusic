@@ -83,27 +83,9 @@ def _progress_line(played, dur):
     played_sec = time_to_seconds(played)
     duration_sec = time_to_seconds(dur)
     percentage = (played_sec / duration_sec) * 100 if duration_sec else 0
-    umm = math.floor(percentage)
-    if 0 < umm <= 10:
-        bar = "◉—————————"
-    elif 10 < umm < 20:
-        bar = "—◉————————"
-    elif 20 <= umm < 30:
-        bar = "——◉———————"
-    elif 30 <= umm < 40:
-        bar = "———◉——————"
-    elif 40 <= umm < 50:
-        bar = "————◉—————"
-    elif 50 <= umm < 60:
-        bar = "—————◉————"
-    elif 60 <= umm < 70:
-        bar = "——————◉———"
-    elif 70 <= umm < 80:
-        bar = "———————◉——"
-    elif 80 <= umm < 95:
-        bar = "————————◉—"
-    else:
-        bar = "—————————◉"
+    bar_length = 20
+    position = min(max(math.floor(percentage / 100 * bar_length), 0), bar_length)
+    bar = f"{'—' * position}◉{'—' * (bar_length - position)}"
     return f"{played}  {bar}  {dur}"
 
 
@@ -116,7 +98,7 @@ def _progress_row(played, dur, style):
                 callback_data="GetTimer",
             )
         ],
-        align="center",
+        align="left",
     )
 
 
@@ -125,21 +107,12 @@ def _queue_len(chat_id):
     return max(len(tracks) - 1, 0) if tracks else 0
 
 
-def _playback_styles(chat_id):
-    tracks = db.get(chat_id)
-    if tracks:
-        styles = tracks[0].get("np_button_styles")
-        if styles:
-            return styles
-
+def _playback_styles():
     palette = random.sample(
         [enums.ButtonStyle.PRIMARY, enums.ButtonStyle.SUCCESS, enums.ButtonStyle.DANGER],
         3,
     )
-    styles = [palette[0], palette[1], palette[2], palette[0], palette[0], palette[2]]
-    if tracks:
-        tracks[0]["np_button_styles"] = styles
-    return styles
+    return [palette[0], palette[1], palette[2], palette[0], palette[0], palette[2]]
 
 
 def _control_rows(_, chat_id, playing, styles, autoplay_on, end_style):
@@ -198,7 +171,7 @@ def _control_rows(_, chat_id, playing, styles, autoplay_on, end_style):
             buttons=[
                 types.RichMessageButton(
                     text=padded(_["RICH_BTN_AUTOPLAY_ON"] if autoplay_on else _["RICH_BTN_AUTOPLAY_OFF"]),
-                    style=enums.ButtonStyle.SUCCESS if autoplay_on else enums.ButtonStyle.DEFAULT,
+                    style=toggle_style if autoplay_on else queue_style,
                     callback_data=f"nowplaying_autoplay {chat_id}",
                 ),
             ],
@@ -255,7 +228,7 @@ def build_now_playing_blocks(
 ):
     blocks = [types.InputRichBlockPhoto(photo=types.InputMediaPhoto(photo))]
     blocks += _compact_now_playing_blocks(_, caption_html, chat_id)
-    styles = _playback_styles(chat_id)
+    styles = _playback_styles()
     if played and dur:
         blocks.append(_progress_row(played, dur, styles[4]))
     blocks += _control_rows(_, chat_id, playing, styles[:4], autoplay_on, styles[5])
