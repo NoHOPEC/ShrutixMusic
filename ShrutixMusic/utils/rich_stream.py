@@ -83,9 +83,9 @@ def _progress_line(played, dur):
     played_sec = time_to_seconds(played)
     duration_sec = time_to_seconds(dur)
     percentage = (played_sec / duration_sec) * 100 if duration_sec else 0
-    bar_length = 20
+    bar_length = 12
     position = min(max(math.floor(percentage / 100 * bar_length), 0), bar_length)
-    bar = f"{'—' * position}◉{'—' * (bar_length - position)}"
+    bar = f"{'━' * position}●{'─' * (bar_length - position)}"
     return f"{played}  {bar}  {dur}"
 
 
@@ -98,7 +98,7 @@ def _progress_row(played, dur, style):
                 callback_data="GetTimer",
             )
         ],
-        align="left",
+        align="center",
     )
 
 
@@ -164,11 +164,6 @@ def _control_rows(_, chat_id, playing, styles, autoplay_on, end_style):
                     style=end_style,
                     callback_data=f"ADMIN Stop|{chat_id}",
                 ),
-            ],
-            align="center",
-        ),
-        types.InputRichBlockButtons(
-            buttons=[
                 types.RichMessageButton(
                     text=padded(_["RICH_BTN_AUTOPLAY_ON"] if autoplay_on else _["RICH_BTN_AUTOPLAY_OFF"]),
                     style=toggle_style if autoplay_on else queue_style,
