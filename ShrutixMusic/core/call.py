@@ -492,7 +492,7 @@ class Call(PyTgCalls):
                     img,
                     _["stream_1"].format(
                         f"https://t.me/{nand.username}?start=info_{videoid}",
-                        title[:23],
+                        title,
                         check[0]["dur"],
                         user,
                     ),
@@ -509,9 +509,7 @@ class Call(PyTgCalls):
                         video=True if str(streamtype) == "video" else False,
                     )
                 except:
-                    return await mystic.edit_text(
-                        _["call_6"], disable_web_page_preview=True
-                    )
+                    return await mystic.edit_text(_["call_6"])
                 if video:
                     stream = MediaStream(file_path, audio_parameters=AudioQuality.HIGH, video_parameters=VideoQuality.SD_480p)
                 else:
@@ -532,7 +530,7 @@ class Call(PyTgCalls):
                     img,
                     _["stream_1"].format(
                         f"https://t.me/{nand.username}?start=info_{videoid}",
-                        title[:23],
+                        title,
                         check[0]["dur"],
                         user,
                     ),
@@ -582,7 +580,7 @@ class Call(PyTgCalls):
                         if str(streamtype) == "audio"
                         else config.TELEGRAM_VIDEO_URL,
                         _["stream_1"].format(
-                            config.SUPPORT_CHAT, title[:23], check[0]["dur"], user
+                            config.SUPPORT_CHAT, title, check[0]["dur"], user
                         ),
                     )
                     db[chat_id][0]["mystic"] = run
@@ -594,7 +592,7 @@ class Call(PyTgCalls):
                         original_chat_id,
                         config.SOUNCLOUD_IMG_URL,
                         _["stream_1"].format(
-                            config.SUPPORT_CHAT, title[:23], check[0]["dur"], user
+                            config.SUPPORT_CHAT, title, check[0]["dur"], user
                         ),
                     )
                     db[chat_id][0]["mystic"] = run
@@ -608,7 +606,7 @@ class Call(PyTgCalls):
                         img,
                         _["stream_1"].format(
                             f"https://t.me/{nand.username}?start=info_{videoid}",
-                            title[:23],
+                            title,
                             check[0]["dur"],
                             user,
                         ),
