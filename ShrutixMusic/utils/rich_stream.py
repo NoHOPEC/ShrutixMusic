@@ -200,15 +200,25 @@ def _compact_now_playing_blocks(_, caption_html):
     for line in lines[2:4]:
         line = re.sub(r"</?b>", "", line, flags=re.IGNORECASE)
         line = re.sub(r"^[^\w<]+", "", line, flags=re.UNICODE).strip()
-        details.append(types.InputRichBlockParagraph(text=_parse_inline(line)))
+        details.append(_parse_inline(line))
 
     return [
         types.InputRichBlockSectionHeading(
             text=types.RichTextBold(text=_["RICH_NOW_PLAYING"]),
+            size=1,
+        ),
+        types.InputRichBlockSectionHeading(
+            text=_parse_inline(title_html),
+            size=2,
+        ),
+        types.InputRichBlockSectionHeading(
+            text=details[0],
+            size=3,
+        ),
+        types.InputRichBlockSectionHeading(
+            text=details[1],
             size=4,
         ),
-        types.InputRichBlockParagraph(text=_parse_inline(title_html)),
-        *details,
     ]
 
 def build_now_playing_blocks(
