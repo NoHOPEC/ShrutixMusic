@@ -1,4 +1,5 @@
 import math
+import random
 import re
 
 from pyrogram import enums, errors, types
@@ -124,8 +125,26 @@ def _queue_len(chat_id):
     return max(len(tracks) - 1, 0) if tracks else 0
 
 
+def _playback_styles(chat_id):
+    tracks = db.get(chat_id)
+    if tracks:
+        styles = tracks[0].get("np_button_styles")
+        if styles:
+            return styles
+
+    palette = random.sample(
+        [enums.ButtonStyle.PRIMARY, enums.ButtonStyle.SUCCESS, enums.ButtonStyle.DANGER],
+        3,
+    )
+    styles = [palette[0], palette[1], palette[2], palette[0], palette[0], palette[2]]
+    if tracks:
+        tracks[0]["np_button_styles"] = styles
+    return styles
+
+
 def _control_rows(_, chat_id, playing, styles, autoplay_on, end_style):
     replay_style, toggle_style, skip_style, queue_style = styles
+    toggle_style = toggle_style if playing else replay_style
 
     def padded(text):
         return f"\u2009{text}\u2009"
@@ -236,14 +255,7 @@ def build_now_playing_blocks(
 ):
     blocks = [types.InputRichBlockPhoto(photo=types.InputMediaPhoto(photo))]
     blocks += _compact_now_playing_blocks(_, caption_html, chat_id)
-    styles = [
-        enums.ButtonStyle.PRIMARY,
-        enums.ButtonStyle.SUCCESS,
-        enums.ButtonStyle.DANGER,
-        enums.ButtonStyle.PRIMARY,
-        enums.ButtonStyle.PRIMARY,
-        enums.ButtonStyle.DANGER,
-    ]
+    styles = _playback_styles(chat_id)
     if played and dur:
         blocks.append(_progress_row(played, dur, styles[4]))
     blocks += _control_rows(_, chat_id, playing, styles[:4], autoplay_on, styles[5])
