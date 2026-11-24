@@ -663,7 +663,7 @@ class Call(PyTgCalls):
         async def stream_services_handler(client, update):
             if not db.get(update.chat_id) and not await is_active_chat(update.chat_id):
                 return
-            LOGGER(__name__).warning(
+            LOGGER(__name__).info(
                 "Assistant left the voice chat %s (status: %s); clearing stale playback state",
                 update.chat_id,
                 update.status,
