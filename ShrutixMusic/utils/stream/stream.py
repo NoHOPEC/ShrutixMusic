@@ -7,6 +7,7 @@ from uuid import uuid4
 import config
 from ShrutixMusic import Carbon, YouTube, nand
 from ShrutixMusic.core.call import Shruti
+from ShrutixMusic.core.error_logger import format_report, pop_failure, send_log
 from ShrutixMusic.misc import db
 from ShrutixMusic.utils.database import add_active_video_chat, is_active_chat
 from ShrutixMusic.utils.exceptions import AssistantErr
@@ -27,11 +28,21 @@ async def _fetch(_, chat_id, vidid, mystic, video):
         YouTube.download(vidid, mystic, videoid=True, video=status)
     )
     await Shruti.await_prejoin(chat_id)
+    task_error = None
     try:
         file_path, direct = await task
-    except Exception:
+    except Exception as e:
         file_path, direct = None, False
+        task_error = e
     if not file_path:
+        fields = pop_failure(str(vidid)) or {
+            "stage": "download",
+            "video_id": vidid,
+            "reason": "No download report was recorded",
+        }
+        fields["chat_id"] = chat_id
+        fields["video"] = bool(video)
+        await send_log(format_report("Failed to fetch track (download)", fields, task_error))
         raise AssistantErr(_["play_14"])
     return file_path, direct
 
@@ -167,7 +178,7 @@ async def _stream(
                     img,
                     _["stream_1"].format(
                         f"https://t.me/{nand.username}?start=info_{vidid}",
-                        title[:23],
+                        title,
                         duration_min,
                         user_name,
                     ),
@@ -251,7 +262,7 @@ async def _stream(
                     img,
                     _["stream_1"].format(
                         f"https://t.me/{nand.username}?start=info_{vidid}",
-                        title[:23],
+                        title,
                         duration_min,
                         user_name,
                     ),
@@ -300,7 +311,7 @@ async def _stream(
                 original_chat_id,
                 config.SOUNCLOUD_IMG_URL,
                 _["stream_1"].format(
-                    config.SUPPORT_CHAT, title[:23], duration_min, user_name
+                    config.SUPPORT_CHAT, title, duration_min, user_name
                 ),
                 replace=mystic,
             )
@@ -350,7 +361,7 @@ async def _stream(
                 chat_id,
                 original_chat_id,
                 config.TELEGRAM_VIDEO_URL if video else config.TELEGRAM_AUDIO_URL,
-                _["stream_1"].format(link, title[:23], duration_min, user_name),
+                _["stream_1"].format(link, title, duration_min, user_name),
                 replace=mystic,
             )
             db[chat_id][0]["mystic"] = run
@@ -410,7 +421,7 @@ async def _stream(
                 img,
                 _["stream_1"].format(
                     f"https://t.me/{nand.username}?start=info_{vidid}",
-                    title[:23],
+                    title,
                     duration_min,
                     user_name,
                 ),
