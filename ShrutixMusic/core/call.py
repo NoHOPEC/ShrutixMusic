@@ -14,6 +14,7 @@ from pytgcalls.types import AudioQuality, ChatUpdate, GroupCallConfig, MediaStre
 
 import config
 from ShrutixMusic import LOGGER, YouTube, nand
+from ShrutixMusic.core.error_logger import format_report, pop_failure, send_log
 from ShrutixMusic.misc import db
 from ShrutixMusic.utils.database import (
     add_active_chat,
@@ -513,7 +514,17 @@ class Call(PyTgCalls):
                         videoid=True,
                         video=True if str(streamtype) == "video" else False,
                     )
-                except:
+                except Exception as e:
+                    fields = pop_failure(str(videoid)) or {"video_id": videoid}
+                    fields["stage"] = "queue advance download"
+                    fields["chat_id"] = chat_id
+                    await send_log(format_report("Failed to fetch next queued track", fields, e))
+                    return await mystic.edit_text(_["call_6"])
+                if not file_path:
+                    fields = pop_failure(str(videoid)) or {"video_id": videoid}
+                    fields["stage"] = "queue advance download"
+                    fields["chat_id"] = chat_id
+                    await send_log(format_report("Failed to fetch next queued track", fields))
                     return await mystic.edit_text(_["call_6"])
                 if video:
                     stream = MediaStream(file_path, audio_parameters=AudioQuality.HIGH, video_parameters=VideoQuality.SD_480p)
