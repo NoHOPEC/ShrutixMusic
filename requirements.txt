@@ -1,5 +1,6 @@
 aiofiles
 aiohttp
+asyncio
 beautifulsoup4
 dnspython
 ffmpeg-python
@@ -7,11 +8,11 @@ gitpython
 hachoir
 heroku3
 httpx[http2]
+kurigram>=2.2.26
 motor
 pillow
 psutil
-py-tgcalls==3.0.0
-kurigram>=2.2.26
+py-tgcalls==0.9.7
 pykeyboard
 python-dotenv
 pyyaml

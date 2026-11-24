@@ -261,7 +261,7 @@ async def del_back_playlist(client, CallbackQuery, _):
                 img,
                 _["stream_1"].format(
                     f"https://t.me/{nand.username}?start=info_{videoid}",
-                    title,
+                    title[:23],
                     duration,
                     user,
                 ),
@@ -270,7 +270,9 @@ async def del_back_playlist(client, CallbackQuery, _):
             db[chat_id][0]["markup"] = "tg"
             await CallbackQuery.edit_message_text(txt, reply_markup=close_markup(_))
         elif "vid_" in queued:
-            mystic = await CallbackQuery.message.reply_text(_["call_7"])
+            mystic = await CallbackQuery.message.reply_text(
+                _["call_7"], disable_web_page_preview=True
+            )
             try:
                 file_path, direct = await YouTube.download(
                     videoid,
@@ -296,7 +298,7 @@ async def del_back_playlist(client, CallbackQuery, _):
                 img,
                 _["stream_1"].format(
                     f"https://t.me/{nand.username}?start=info_{videoid}",
-                    title,
+                    title[:23],
                     duration,
                     user,
                 ),
@@ -342,7 +344,7 @@ async def del_back_playlist(client, CallbackQuery, _):
                     TELEGRAM_AUDIO_URL
                     if str(streamtype) == "audio"
                     else TELEGRAM_VIDEO_URL,
-                    _["stream_1"].format(SUPPORT_CHAT, title, duration, user),
+                    _["stream_1"].format(SUPPORT_CHAT, title[:23], duration, user),
                 )
                 db[chat_id][0]["mystic"] = run
                 db[chat_id][0]["markup"] = "tg"
@@ -354,7 +356,7 @@ async def del_back_playlist(client, CallbackQuery, _):
                     SOUNCLOUD_IMG_URL
                     if str(streamtype) == "audio"
                     else TELEGRAM_VIDEO_URL,
-                    _["stream_1"].format(SUPPORT_CHAT, title, duration, user),
+                    _["stream_1"].format(SUPPORT_CHAT, title[:23], duration, user),
                 )
                 db[chat_id][0]["mystic"] = run
                 db[chat_id][0]["markup"] = "tg"
@@ -367,7 +369,7 @@ async def del_back_playlist(client, CallbackQuery, _):
                     img,
                     _["stream_1"].format(
                         f"https://t.me/{nand.username}?start=info_{videoid}",
-                        title,
+                        title[:23],
                         duration,
                         user,
                     ),

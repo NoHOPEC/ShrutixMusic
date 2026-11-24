@@ -1,6 +1,6 @@
 {
   "name": "ShrutixMusic",
-  "description": "A Telegram Music Player Bot, written in Python with Kurigram and PyTgCalls.",
+  "description": "A Telegram Music Player Bot, written in Python with Pyrogram and Py-Tgcalls.",
   "logo": "https://telegra.ph/file/5a5039d21a5cedb5bd6bc-e25218a8dd3941e289.jpg",
   "keywords": [
     "python3",
@@ -9,7 +9,7 @@
     "Shrutix",
     "MusicBot",
     "telegram-bot",
-    "kurigram"
+    "pyrogram"
   ],
   "env": {
     "API_ID": {
@@ -38,7 +38,7 @@
       "required": true
     },
     "STRING_SESSION": {
-      "description": "A Kurigram-compatible user session string from @StringFatherBot on Telegram.",
+      "description": "A Pyrogram v2 String Session from @StringFatherBot on Telegram.",
       "value": "",
       "required": true
     },
@@ -71,6 +71,9 @@
   "buildpacks": [
     {
       "url": "heroku/python"
+    },
+    {
+      "url": "heroku/nodejs"
     },
     {
       "url": "https://github.com/jonathanong/heroku-buildpack-ffmpeg-latest.git"

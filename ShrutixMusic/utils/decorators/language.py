@@ -1,19 +1,18 @@
 from strings import get_string
 
-from pyrogram.errors import RPCError
-
-from ShrutixMusic import LOGGER, nand
+from ShrutixMusic import nand
 from ShrutixMusic.misc import SUDOERS
 from config import SUPPORT_CHAT
 from ShrutixMusic.utils.database import get_lang, is_maintenance
 
 
 def language(mystic):
-    async def run(_, message, **kwargs):
+    async def wrapper(_, message, **kwargs):
         if await is_maintenance() is False:
             if message.from_user.id not in SUDOERS:
                 return await message.reply_text(
                     text=f"{nand.mention} ɪs ᴜɴᴅᴇʀ ᴍᴀɪɴᴛᴇɴᴀɴᴄᴇ, ᴠɪsɪᴛ <a href={SUPPORT_CHAT}>sᴜᴘᴘᴏʀᴛ ᴄʜᴀᴛ</a> ғᴏʀ ᴋɴᴏᴡɪɴɢ ᴛʜᴇ ʀᴇᴀsᴏɴ.",
+                    disable_web_page_preview=True,
                 )
         try:
             await message.delete()
@@ -26,17 +25,6 @@ def language(mystic):
         except:
             language = get_string("en")
         return await mystic(_, message, language)
-
-    async def wrapper(_, message, **kwargs):
-        try:
-            return await run(_, message, **kwargs)
-        except RPCError as e:
-            if getattr(e, "ID", None) != "CHAT_WRITE_FORBIDDEN":
-                raise
-            LOGGER(__name__).warning(
-                "Cannot send messages in chat %s (CHAT_WRITE_FORBIDDEN); ignoring the command.",
-                message.chat.id,
-            )
 
     return wrapper
 
