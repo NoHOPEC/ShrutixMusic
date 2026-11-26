@@ -11,7 +11,6 @@ from ShrutixMusic.core.call import Shruti
 from ShrutixMusic.core.error_logger import report_play_error
 from ShrutixMusic.utils import seconds_to_min, time_to_seconds
 from ShrutixMusic.utils.channelplay import get_channeplayCB
-from ShrutixMusic.utils.database import is_active_chat
 from ShrutixMusic.utils.decorators.language import languageCB
 from ShrutixMusic.utils.decorators.play import PlayWrapper
 from ShrutixMusic.utils.formatters import formats
@@ -55,40 +54,17 @@ async def play_commnd(
     url,
     fplay,
 ):
-    early = False
-    if await _wants_prejoin(message, chat_id, playmode, url):
-        early = await Shruti.prejoin_start(chat_id, video=bool(video))
-    try:
-        await _play_flow(
-            client,
-            message,
-            _,
-            chat_id,
-            video,
-            channel,
-            playmode,
-            url,
-            fplay,
-        )
-    finally:
-        if early:
-            try:
-                await Shruti.prejoin_settle(chat_id)
-            except Exception:
-                pass
-
-
-async def _wants_prejoin(message, chat_id, playmode, url):
-    if str(playmode) != "Direct":
-        return False
-    if await is_active_chat(chat_id):
-        return False
-    reply = message.reply_to_message
-    if reply and (reply.audio or reply.voice or reply.video or reply.document):
-        return False
-    if url:
-        return await YouTube.exists(url)
-    return len(message.command) >= 2
+    await _play_flow(
+        client,
+        message,
+        _,
+        chat_id,
+        video,
+        channel,
+        playmode,
+        url,
+        fplay,
+    )
 
 
 def _play_error(_, error):
@@ -524,19 +500,9 @@ async def play_music(client, CallbackQuery, _):
         await CallbackQuery.answer()
     except:
         pass
-    early = False
-    if not await is_active_chat(chat_id):
-        early = await Shruti.prejoin_start(chat_id, video=(mode == "v"))
-    try:
-        await _play_music_flow(
-            _, CallbackQuery, vidid, mode, cplay, fplay, chat_id, channel, user_name
-        )
-    finally:
-        if early:
-            try:
-                await Shruti.prejoin_settle(chat_id)
-            except Exception:
-                pass
+    await _play_music_flow(
+        _, CallbackQuery, vidid, mode, cplay, fplay, chat_id, channel, user_name
+    )
 
 
 async def _play_music_flow(

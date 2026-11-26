@@ -27,7 +27,6 @@ async def _fetch(_, chat_id, vidid, mystic, video):
     task = asyncio.ensure_future(
         YouTube.download(vidid, mystic, videoid=True, video=status)
     )
-    await Shruti.await_prejoin(chat_id)
     task_error = None
     try:
         file_path, direct = await task
